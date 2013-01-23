@@ -2,42 +2,65 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.catalina.websocket.MessageInbound;
 import org.apache.catalina.websocket.StreamInbound;
 import org.apache.catalina.websocket.WebSocketServlet;
+import org.apache.catalina.websocket.WsOutbound;
 
-public class WSserver extends WebSocketServlet  {
+public class WSserver extends WebSocketServlet
+{
+	    private static final long serialVersionUID = 1L;
+	    private volatile int byteBufSize;
+	    private volatile int charBufSize;
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+	    @Override
+	    public void init() throws ServletException {
+	        super.init();
+	        byteBufSize = getInitParameterIntValue("byteBufferMaxSize", 2097152);
+	        charBufSize = getInitParameterIntValue("charBufferMaxSize", 2097152);
+	    }
 
+	    public int getInitParameterIntValue(String name, int defaultValue) {
+	        String val = this.getInitParameter(name);
+	        int result;
+	        if(null != val) {
+	            try {
+	                result = Integer.parseInt(val);
+	            }catch (Exception x) {
+	                result = defaultValue;
+	            }
+	        } else {
+	            result = defaultValue;
+	        }
+
+	        return result;
+	    }
+
+	    @Override
+	    protected StreamInbound createWebSocketInbound(String subProtocol,
+	            HttpServletRequest request) {
+	        return new EchoMessageInbound(byteBufSize,charBufSize);
+	    }
+
+	    private static final class EchoMessageInbound extends MessageInbound {
+
+	        public EchoMessageInbound(int byteBufferMaxSize, int charBufferMaxSize) {
+	            super();
+	            setByteBufferMaxSize(byteBufferMaxSize);
+	            setCharBufferMaxSize(charBufferMaxSize);
+	        }
+
+	        @Override
+	        protected void onBinaryMessage(ByteBuffer message) throws IOException {
+	            getWsOutbound().writeBinaryMessage(message);
+	        }
+
+	        @Override
+	        protected void onTextMessage(CharBuffer message) throws IOException {
+	            getWsOutbound().writeTextMessage(message);
+	        }
+	    }
 	}
-
-	@Override
-	protected  StreamInbound createWebSocketInbound(String arg0,
-			HttpServletRequest arg1) {
-		
-		return new Messages();
-	}
-	
-	private final class Messages extends MessageInbound {
-
-		@Override
-		protected void onBinaryMessage(ByteBuffer arg0) throws IOException {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		protected void onTextMessage(CharBuffer arg0) throws IOException {
-			// TODO Auto-generated method stub
-			System.out.println(arg0.toString());
-		}
-		
-	}
-}
