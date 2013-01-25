@@ -24,24 +24,36 @@ public class WSserver extends WebSocketServlet
 
 	    private static final class EchoMessageInbound extends MessageInbound {
 
+	    	 @Override
+	         protected void onOpen(WsOutbound outbound) {
+	             connections.add(this);
+	         }
+
+	         @Override
+	         protected void onClose(int status) {
+	             connections.remove(this);
+	         }
 	        @Override
 	        protected void onBinaryMessage(ByteBuffer message) throws IOException {
+	        	
 	            getWsOutbound().writeBinaryMessage(message);
 	            
 	        }
 
 	        @Override
 	        protected void onTextMessage(CharBuffer message) throws IOException {
-	            getWsOutbound().writeTextMessage(message);
-	            broadcast(message);
+	        	
+	            //getWsOutbound().writeTextMessage(message);
+	            broadcast(message.toString());
 	        }
 	        
-	        private void broadcast(CharBuffer message) {
+	        private void broadcast(String messageAll) {
 	            for (EchoMessageInbound connection : connections) {
-	                try {	               
-	                    	connection.getWsOutbound().writeTextMessage(message);
-	                } catch (IOException ignore) {
-	                    // Ignore
+	                try {
+	                    CharBuffer buffer = CharBuffer.wrap(messageAll);
+	                    connection.getWsOutbound().writeTextMessage(buffer);
+	                } catch (IOException ex) {
+	                    
 	                }
 	            }
 	        }
