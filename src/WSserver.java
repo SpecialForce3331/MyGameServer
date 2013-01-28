@@ -15,7 +15,8 @@ import org.apache.catalina.websocket.WsOutbound;
 public class WSserver extends WebSocketServlet
 {
 	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>();
-
+	 	private static EchoMessageInbound currentConnect = new EchoMessageInbound();
+	 	
 	    @Override
 	    protected StreamInbound createWebSocketInbound(String subProtocol,
 	            HttpServletRequest request) {
@@ -27,6 +28,7 @@ public class WSserver extends WebSocketServlet
 	    	 @Override
 	         protected void onOpen(WsOutbound outbound) {
 	             connections.add(this);
+	             currentConnect = this;
 	         }
 
 	         @Override
@@ -51,7 +53,12 @@ public class WSserver extends WebSocketServlet
 	            for (EchoMessageInbound connection : connections) {
 	                try {
 	                    CharBuffer buffer = CharBuffer.wrap(messageAll);
-	                    connection.getWsOutbound().writeTextMessage(buffer);
+	                    
+	                    if(connection != currentConnect )
+	                    {
+	                    	connection.getWsOutbound().writeTextMessage(buffer);
+	                    }
+	                    
 	                } catch (IOException ex) {
 	                    
 	                }
