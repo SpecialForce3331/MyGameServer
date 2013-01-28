@@ -15,7 +15,7 @@ import org.apache.catalina.websocket.WsOutbound;
 public class WSserver extends WebSocketServlet
 {
 	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>();
-	 	private static EchoMessageInbound currentConnect = new EchoMessageInbound();
+	 	//private static EchoMessageInbound currentConnect = new EchoMessageInbound();
 	 	
 	    @Override
 	    protected StreamInbound createWebSocketInbound(String subProtocol,
@@ -24,7 +24,9 @@ public class WSserver extends WebSocketServlet
 	    }
 
 	    private static final class EchoMessageInbound extends MessageInbound {
-
+	    	 
+	    	 public StreamInbound currentConnect;
+	    	
 	    	 @Override
 	         protected void onOpen(WsOutbound outbound) {
 	             connections.add(this);
@@ -54,7 +56,7 @@ public class WSserver extends WebSocketServlet
 	                try {
 	                    CharBuffer buffer = CharBuffer.wrap(messageAll);
 	                    
-	                    if(connection != currentConnect )
+	                    if(connection != currentConnect ) //отсылаем всем кроме самого себя
 	                    {
 	                    	connection.getWsOutbound().writeTextMessage(buffer);
 	                    }
