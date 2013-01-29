@@ -25,17 +25,17 @@ public class WSserver extends WebSocketServlet
 
 	    private static final class EchoMessageInbound extends MessageInbound {
 	    	 
-	    	 public StreamInbound currentConnect;
-	    	
-	    	 @Override
-	         protected void onOpen(WsOutbound outbound) {
-	             connections.add(this);
-	             currentConnect = this;
-	         }
+	    	public StreamInbound currentConnect;
 
-	         @Override
-	         protected void onClose(int status) {
-	             connections.remove(this);
+	    	@Override
+	        protected void onOpen(WsOutbound outbound) {
+	            connections.add(this);
+	            currentConnect = this;
+	        }
+
+	        @Override
+	        protected void onClose(int status) {
+	        	connections.remove(this);
 	         }
 	        @Override
 	        protected void onBinaryMessage(ByteBuffer message) throws IOException {
