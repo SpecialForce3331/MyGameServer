@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -25,8 +26,9 @@ public class WSserver extends WebSocketServlet
 
 	    private static final class EchoMessageInbound extends MessageInbound {
 	    	 
-	    	public StreamInbound currentConnect;
-
+	    	StreamInbound currentConnect; //Для запоминания текущего соединения
+	    	Map<String, StreamInbound> allConnections; //для поиска соединения по логину игрока
+	    	
 	    	@Override
 	        protected void onOpen(WsOutbound outbound) {
 	            connections.add(this);
@@ -47,11 +49,21 @@ public class WSserver extends WebSocketServlet
 	        @Override
 	        protected void onTextMessage(CharBuffer message) throws IOException {
 	        	
-	            //getWsOutbound().writeTextMessage(message);
-	            broadcast(message.toString());
+	        	String[] result = message.toString().split(",");
+	        	
+	        	if ( result[0].length() == 1)//если пришел числовой id игрока в промежутке 1-3
+	        	{
+	        		currentConnect.getWsOutbound().writeTextMessage(message);
+	        		allConnections.put(result[1], currentConnect);
+	        	}
+	        	else if( result[0] == "login" )
+	        	{
+	        		allConnections.put(result[1], currentConnect);
+	        	}
+
 	        }
 	        
-	        private void broadcast(String messageAll) {
+	        private void broadcast( String messageAll ) {
 	            for (EchoMessageInbound connection : connections) {
 	                try {
 	                    CharBuffer buffer = CharBuffer.wrap(messageAll);
