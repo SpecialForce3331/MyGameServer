@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -16,7 +17,7 @@ import org.apache.catalina.websocket.WsOutbound;
 public class WSserver extends WebSocketServlet
 {
 	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>();
-	 	//private static EchoMessageInbound currentConnect = new EchoMessageInbound();
+	 	static HashMap<String, StreamInbound> allConnections = new HashMap<String, StreamInbound>(); //для поиска соединения по логину игрока
 	 	
 	    @Override
 	    protected StreamInbound createWebSocketInbound(String subProtocol,
@@ -27,7 +28,7 @@ public class WSserver extends WebSocketServlet
 	    private static final class EchoMessageInbound extends MessageInbound {
 	    	 
 	    	StreamInbound currentConnect; //Для запоминания текущего соединения
-	    	Map<String, StreamInbound> allConnections; //для поиска соединения по логину игрока
+	    	
 	    	
 	    	@Override
 	        protected void onOpen(WsOutbound outbound) {
@@ -51,14 +52,43 @@ public class WSserver extends WebSocketServlet
 	        	
 	        	String[] result = message.toString().split(",");
 	        	
-	        	if ( result[0].length() == 1)//если пришел числовой id игрока в промежутке 1-3
+	        	if( result[0].equals("login") ) //регистрация логина и соединения в хэшмапе
 	        	{
-	        		currentConnect.getWsOutbound().writeTextMessage(message);
-	        		allConnections.put(result[1], currentConnect);
+	        		try
+	        		{
+	        			allConnections.put(result[1], currentConnect); //записываем текущее соединение под индексом логина
+	        			currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("Server -- Connection Accept.")); //сообщаем что все хорошо
+	        		}
+	        		catch(  NullPointerException ex )
+	        		{ ex.printStackTrace(); }
+	        		
 	        	}
-	        	else if( result[0] == "login" )
+	        	else if( result[0].equals("toPlayer") ) //отправка сообщения определенному соединению по логину
 	        	{
-	        		allConnections.put(result[1], currentConnect);
+	        		CharBuffer toPlayer = CharBuffer.wrap(result[2]);
+	        		
+	        		try
+	        		{
+	        			StreamInbound tempory = allConnections.get(result[1]); //получаем соединение по логину
+	        			
+	        			if ( tempory != null )
+	        			{
+	        				tempory.getWsOutbound().writeTextMessage(toPlayer); //отправляем сообщение если соединение найдено
+	        			}
+	        			else
+	        			{
+	        				currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("This user is Offline."));
+	        				System.out.println("error, tempory is NULL");
+	        			}
+	        			
+	        		}
+	        		catch( NullPointerException ex )
+	        		{ ex.printStackTrace(); }
+	        		
+	        	}
+	        	else
+	        	{
+	        		currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("Error, unknown query =)"));
 	        	}
 
 	        }
