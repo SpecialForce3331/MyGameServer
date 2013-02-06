@@ -105,7 +105,7 @@ public class MysqlLib extends HttpServlet {
 			} 
 			catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
 		}
-		else if( request.getParameter("action") == "checkSession" ) //проверяем есть ли логин в сессийной переменной ( авторизован ли )
+		else if( request.getParameter("action").equals("checkSession") ) //проверяем есть ли логин в сессийной переменной ( авторизован ли )
 		{
 			HttpSession session = request.getSession(true);
 			
@@ -134,6 +134,70 @@ public class MysqlLib extends HttpServlet {
 					}		
 			}
 				
+		}
+		else if( request.getParameter("action").equals("newChar") ) //создаем персонажа
+		{
+			
+			try { 
+				
+				Class.forName("com.mysql.jdbc.Driver");
+				con = DriverManager.getConnection(url, user, password);
+				setUnicod1 = con.prepareStatement("set character set utf8");
+				setUnicod2 = con.prepareStatement("set names utf8");
+				setUnicod1.execute();
+				setUnicod2.execute();
+				
+				selectData = con.prepareStatement("SELECT `name` FROM `heroes` WHERE `name` = ? "); //Check the existing login in base
+				selectData.setString(1, request.getParameter("name"));
+				ResultSet rs = selectData.executeQuery();
+				rs.next();
+				if ( rs.getRow() == 0 ) //если такого имени героя в базе не найдено - регистрируем
+				{	
+
+					insertReg = con.prepareStatement("INSERT INTO `heroes` (`login`, `name`, `role`) VALUES ( ?, ?, ? )");
+					insertReg.setString(1, request.getParameter("login"));
+					insertReg.setString(2, request.getParameter("name"));
+					insertReg.setString(3, request.getParameter("role"));
+					
+					insertReg.execute();
+					con.close();
+					
+					json.put("result", "ok");
+					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+					
+				}
+				else
+				{
+
+					json.put("result", "false");
+					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+				}
+			} 
+			catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
+		}
+		else if( request.getParameter("action").equals("getCharacters") ) //берем персонажей
+		{
+			try {
+				
+				Class.forName("com.mysql.jdbc.Driver");
+				con = DriverManager.getConnection(url, user, password);
+				setUnicod1 = con.prepareStatement("set character set utf8");
+				setUnicod2 = con.prepareStatement("set names utf8");
+				setUnicod1.execute();
+				setUnicod2.execute();
+	
+				selectData = con.prepareStatement("SELECT `name`,`role`,`lvl`,`exp` FROM `heroes` WHERE `login` = ?");
+				selectData.setString(1, request.getParameter("login"));
+				ResultSet rs = selectData.executeQuery();
+				rs.next();
+
+				json.put( "result", rs.getString(1) + "," + rs.getString(2) + "," + rs.getString(3) + "," + rs.getString(4));
+
+				out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+				con.close();
+
+			} 
+			catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
 		}
 		
 	}	
