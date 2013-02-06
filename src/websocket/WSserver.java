@@ -1,3 +1,5 @@
+package websocket;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -7,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.catalina.websocket.MessageInbound;
@@ -14,18 +17,21 @@ import org.apache.catalina.websocket.StreamInbound;
 import org.apache.catalina.websocket.WebSocketServlet;
 import org.apache.catalina.websocket.WsOutbound;
 
+
 public class WSserver extends WebSocketServlet
-{
+{		
+	
 	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>();
 	 	static HashMap<String, StreamInbound> allConnections = new HashMap<String, StreamInbound>(); //для поиска соединения по логину игрока
 	 	
 	    @Override
-	    protected StreamInbound createWebSocketInbound(String subProtocol,
-	            HttpServletRequest request) {
+	    protected StreamInbound createWebSocketInbound(String subProtocol, HttpServletRequest request) 
+	    {
 	        return new EchoMessageInbound();
 	    }
 
-	    private static final class EchoMessageInbound extends MessageInbound {
+	    private static final class EchoMessageInbound extends MessageInbound 
+	    {
 	    	 
 	    	StreamInbound currentConnect; //Для запоминания текущего соединения
 	    	
@@ -43,8 +49,7 @@ public class WSserver extends WebSocketServlet
 	        @Override
 	        protected void onBinaryMessage(ByteBuffer message) throws IOException {
 	        	
-	            getWsOutbound().writeBinaryMessage(message);
-	            
+	            getWsOutbound().writeBinaryMessage(message);   
 	        }
 
 	        @Override
@@ -109,4 +114,5 @@ public class WSserver extends WebSocketServlet
 	            }
 	        }
 	    }
-	}
+	    
+}
