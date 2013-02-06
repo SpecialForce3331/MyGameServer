@@ -99,11 +99,41 @@ public class MysqlLib extends HttpServlet {
 				}
 				else
 				{
-					json.put("result", "login is busy");
+					json.put("result", "false");
 					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
 				}
 			} 
 			catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
+		}
+		else if( request.getParameter("action") == "checkSession" ) //проверяем есть ли логин в сессийной переменной ( авторизован ли )
+		{
+			HttpSession session = request.getSession(true);
+			
+			if ( session.getAttribute("login") != null )
+			{
+				try {
+					
+					json.put("result", session.getAttribute("login")); //отправляем логин из сессионной переменной
+					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );
+					
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			else
+			{
+				try {
+					
+					json.put("result", "false");
+					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );
+					
+					} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					}		
+			}
+				
 		}
 		
 	}	
