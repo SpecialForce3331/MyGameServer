@@ -123,82 +123,99 @@ public class MysqlLib extends HttpServlet {
 			}
 			else
 			{
-				try {
-					
-					json.put("result", "false");
-					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );
-					
-					} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-					}		
+				
+				response.sendRedirect(response.encodeRedirectURL("http://427044.dyn.ufanet.ru/MyGame/index.html"));
+			
 			}
 				
 		}
 		else if( request.getParameter("action").equals("newChar") ) //создаем персонажа
 		{
+			HttpSession session = request.getSession(true);
 			
-			try { 
-				
-				Class.forName("com.mysql.jdbc.Driver");
-				con = DriverManager.getConnection(url, user, password);
-				setUnicod1 = con.prepareStatement("set character set utf8");
-				setUnicod2 = con.prepareStatement("set names utf8");
-				setUnicod1.execute();
-				setUnicod2.execute();
-				
-				selectData = con.prepareStatement("SELECT `name` FROM `heroes` WHERE `name` = ? "); //Check the existing login in base
-				selectData.setString(1, request.getParameter("name"));
-				ResultSet rs = selectData.executeQuery();
-				rs.next();
-				if ( rs.getRow() == 0 ) //если такого имени героя в базе не найдено - регистрируем
-				{	
-
-					insertReg = con.prepareStatement("INSERT INTO `heroes` (`login`, `name`, `role`) VALUES ( ?, ?, ? )");
-					insertReg.setString(1, request.getParameter("login"));
-					insertReg.setString(2, request.getParameter("name"));
-					insertReg.setString(3, request.getParameter("role"));
+			if ( session.getAttribute("login") != null )
+			{
+				try { 
 					
-					insertReg.execute();
-					con.close();
+					Class.forName("com.mysql.jdbc.Driver");
+					con = DriverManager.getConnection(url, user, password);
+					setUnicod1 = con.prepareStatement("set character set utf8");
+					setUnicod2 = con.prepareStatement("set names utf8");
+					setUnicod1.execute();
+					setUnicod2.execute();
 					
-					json.put("result", "ok");
-					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
-					
-				}
-				else
-				{
-
-					json.put("result", "false");
-					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
-				}
-			} 
-			catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
+					selectData = con.prepareStatement("SELECT `name` FROM `heroes` WHERE `name` = ? "); //Check the existing login in base
+					selectData.setString(1, request.getParameter("name"));
+					ResultSet rs = selectData.executeQuery();
+					rs.next();
+					if ( rs.getRow() == 0 ) //если такого имени героя в базе не найдено - регистрируем
+					{	
+	
+						insertReg = con.prepareStatement("INSERT INTO `heroes` (`login`, `name`, `role`) VALUES ( ?, ?, ? )");
+						insertReg.setString(1, request.getParameter("login"));
+						insertReg.setString(2, request.getParameter("name"));
+						insertReg.setString(3, request.getParameter("role"));
+						
+						insertReg.execute();
+						con.close();
+						
+						json.put("result", "ok");
+						out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+						
+					}
+					else
+					{
+	
+						json.put("result", "false");
+						out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+					}
+				} 
+				catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
+			}
 		}
 		else if( request.getParameter("action").equals("getCharacters") ) //берем персонажей
 		{
-			try {
-				
-				Class.forName("com.mysql.jdbc.Driver");
-				con = DriverManager.getConnection(url, user, password);
-				setUnicod1 = con.prepareStatement("set character set utf8");
-				setUnicod2 = con.prepareStatement("set names utf8");
-				setUnicod1.execute();
-				setUnicod2.execute();
-	
-				selectData = con.prepareStatement("SELECT `name`,`role`,`lvl`,`exp` FROM `heroes` WHERE `login` = ?");
-				selectData.setString(1, request.getParameter("login"));
-				ResultSet rs = selectData.executeQuery();
-				rs.next();
-
-				json.put( "result", rs.getString(1) + "," + rs.getString(2) + "," + rs.getString(3) + "," + rs.getString(4));
-
-				out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
-				con.close();
-
-			} 
-			catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
-		}
+			HttpSession session = request.getSession(true);
+			
+			if ( session.getAttribute("login") != null )
+			{
+				try {
+					
+					Class.forName("com.mysql.jdbc.Driver");
+					con = DriverManager.getConnection(url, user, password);
+					setUnicod1 = con.prepareStatement("set character set utf8");
+					setUnicod2 = con.prepareStatement("set names utf8");
+					setUnicod1.execute();
+					setUnicod2.execute();
 		
+					selectData = con.prepareStatement("SELECT COUNT(`name`) FROM `heroes` WHERE `login` = ?"); //получаем кол-во строк
+					selectData.setString(1, request.getParameter("login"));
+					ResultSet countResult = selectData.executeQuery();
+					countResult.next();
+					int count = countResult.getInt(1);//выбираем первое полученное значение, второго то не будет )
+					String[] character = new String[count]; //создаем массив численностью в кол-во строк что получили из базы
+					
+					selectData = con.prepareStatement("SELECT `name`,`role`,`lvl`,`exp` FROM `heroes` WHERE `login` = ?"); //получаем строки 
+					selectData.setString(1, request.getParameter("login"));
+					ResultSet rs = selectData.executeQuery();
+					
+					for(int i = 0; i < count; i++)
+					{	
+						rs.next();
+						character[i] = rs.getString(1) + "," + rs.getString(2) + "," + rs.getString(3) + "," + rs.getString(4);						
+					}
+					json.put( "result", character);
+					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+					con.close();
+	
+				} 
+				catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
+			}
+		}
+		else
+		{
+			
+			response.sendRedirect(response.encodeRedirectURL("http://427044.dyn.ufanet.ru/MyGame/index.html"));
+		}
 	}	
 }
