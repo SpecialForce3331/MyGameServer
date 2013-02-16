@@ -136,6 +136,7 @@ public class MysqlLib extends HttpServlet {
 			if ( session.getAttribute("login") != null )
 			{
 				try { 
+					System.out.println(session.getAttribute("login").toString());
 					
 					Class.forName("com.mysql.jdbc.Driver");
 					con = DriverManager.getConnection(url, user, password);
@@ -144,7 +145,7 @@ public class MysqlLib extends HttpServlet {
 					setUnicod1.execute();
 					setUnicod2.execute();
 					
-					selectData = con.prepareStatement("SELECT `name` FROM `heroes` WHERE `name` = ? "); //Check the existing login in base
+					selectData = con.prepareStatement("SELECT `name` FROM `heroes` WHERE `name` = ? "); //Проверяем наличие персонажа с таким именем
 					selectData.setString(1, request.getParameter("name"));
 					ResultSet rs = selectData.executeQuery();
 					rs.next();
@@ -152,7 +153,7 @@ public class MysqlLib extends HttpServlet {
 					{	
 	
 						insertReg = con.prepareStatement("INSERT INTO `heroes` (`login`, `name`, `role`) VALUES ( ?, ?, ? )");
-						insertReg.setString(1, request.getParameter("login"));
+						insertReg.setString(1, session.getAttribute("login").toString());
 						insertReg.setString(2, request.getParameter("name"));
 						insertReg.setString(3, request.getParameter("role"));
 						
@@ -160,8 +161,7 @@ public class MysqlLib extends HttpServlet {
 						con.close();
 						
 						json.put("result", "ok");
-						out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
-						
+						out.print( request.getParameter("callback") + "(" + json.toString() + ")" );		
 					}
 					else
 					{
@@ -189,17 +189,17 @@ public class MysqlLib extends HttpServlet {
 					setUnicod2.execute();
 		
 					selectData = con.prepareStatement("SELECT COUNT(`name`) FROM `heroes` WHERE `login` = ?"); //получаем кол-во строк
-					selectData.setString(1, request.getParameter("login"));
+					selectData.setString(1, session.getAttribute("login").toString() );
 					ResultSet countResult = selectData.executeQuery();
 					countResult.next();
-					int count = countResult.getInt(1);//выбираем первое полученное значение, второго то не будет )
+					int count = countResult.getInt(1);//Значение будет только одной строкой, эту строку и выбираем
 					String[] character = new String[count]; //создаем массив численностью в кол-во строк что получили из базы
 					
 					selectData = con.prepareStatement("SELECT `name`,`role`,`lvl`,`exp` FROM `heroes` WHERE `login` = ?"); //получаем строки 
-					selectData.setString(1, request.getParameter("login"));
+					selectData.setString(1, session.getAttribute("login").toString() );
 					ResultSet rs = selectData.executeQuery();
 					
-					for(int i = 0; i < count; i++)
+					for(int i = 0; i < count; i++) //кладем в массим в удобной форме, чтобы прочитать на клиентской стороне
 					{	
 						rs.next();
 						character[i] = rs.getString(1) + "," + rs.getString(2) + "," + rs.getString(3) + "," + rs.getString(4);						
@@ -211,6 +211,151 @@ public class MysqlLib extends HttpServlet {
 				} 
 				catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
 			}
+		}
+		else if( request.getParameter("action").equals("newGame") ) //добавление новой игры в БД
+		{
+			HttpSession session = request.getSession(true);
+			
+			if ( session.getAttribute("login") != null )
+			{
+				try
+				{
+					Class.forName("com.mysql.jdbc.Driver");
+					con = DriverManager.getConnection(url, user, password);
+					setUnicod1 = con.prepareStatement("set character set utf8");
+					setUnicod2 = con.prepareStatement("set names utf8");
+					setUnicod1.execute();
+					setUnicod2.execute();
+					
+					selectData = con.prepareStatement("SELECT `login` FROM `games` WHERE `login` = ? "); //Проверяем наличие уже созданной игры по логину
+					selectData.setString(1, session.getAttribute("login").toString());
+					ResultSet rs = selectData.executeQuery();
+					rs.next();
+					if ( rs.getRow() == 0 ) //если такой игры в базе не найдено - регистрируем
+					{	
+						String role = null;
+	
+						//Назначаем ячейку таблицы согласно полученному Id персонажа
+		
+						if ( request.getParameter("role").equals("1") )
+						{
+							role = "knight";
+						}
+						else if( request.getParameter("role").equals("2") )
+						{
+							role = "mage";
+						}
+						else if( request.getParameter("role").equals("3") )
+						{
+							role = "archer";
+						}
+						
+						if( role != null )
+						{
+							session.setAttribute("role", request.getParameter("role")); //записываем в сессию роль игрока
+							
+							insertReg = con.prepareStatement("INSERT INTO `games` (`login`, `title`, `password`, "+ role +") VALUES ( ?, ?, ?, ? )");
+							insertReg.setString(1, session.getAttribute("login").toString());
+							insertReg.setString(2, request.getParameter("title"));
+							insertReg.setString(3, request.getParameter("password"));
+							insertReg.setInt(4, 1); //1 - значит такой игрок присоединен к игре, 0 значит нет ( по умолчанию )
+							
+							insertReg.execute();
+							con.close();
+							
+							json.put("result", "ok");
+							out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+						}
+					}
+					else
+					{
+		
+						json.put("result", "false");
+						out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+					}
+				} 
+				catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
+			}
+		}
+		else if( request.getParameter("action").equals("showGames"))
+		{
+			HttpSession session = request.getSession(true);
+			
+			if ( session.getAttribute("login") != null )
+			{
+				try {
+					
+					Class.forName("com.mysql.jdbc.Driver");
+					con = DriverManager.getConnection(url, user, password);
+					setUnicod1 = con.prepareStatement("set character set utf8");
+					setUnicod2 = con.prepareStatement("set names utf8");
+					setUnicod1.execute();
+					setUnicod2.execute();
+		
+					selectData = con.prepareStatement("SELECT COUNT(`login`) FROM `games` WHERE `login` = ?"); //получаем кол-во строк
+					selectData.setString(1, session.getAttribute("login").toString() );
+					ResultSet countResult = selectData.executeQuery();
+					countResult.next();
+					int count = countResult.getInt(1);//Значение будет только одной строкой, эту строку и выбираем
+					String[] games = new String[count]; //создаем массив численностью в кол-во строк что получили из базы
+					
+					selectData = con.prepareStatement("SELECT `login`,`title`,`knight`,`mage`,`archer` FROM `games` WHERE `login` = ?"); //получаем строки 
+					selectData.setString(1, session.getAttribute("login").toString() );
+					ResultSet rs = selectData.executeQuery();
+					
+					for(int i = 0; i < count; i++) //кладем в массим в удобной форме, чтобы прочитать на клиентской стороне
+					{	
+						rs.next();
+						games[i] = rs.getString(1) + "," + rs.getString(2) + "," + rs.getString(3) + "," + rs.getString(4) + "," + rs.getString(5);						
+					}
+					json.put( "result", games);
+					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+					con.close();
+	
+				} 
+				catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
+			}
+		}
+		else if( request.getParameter("action").equals("choiseChar")) //передаем игроку его роль
+		{
+			HttpSession session = request.getSession(true);
+			
+			try {
+			Class.forName("com.mysql.jdbc.Driver");
+			con = DriverManager.getConnection(url, user, password);
+			setUnicod1 = con.prepareStatement("set character set utf8");
+			setUnicod2 = con.prepareStatement("set names utf8");
+			setUnicod1.execute();
+			setUnicod2.execute();
+			
+			selectData = con.prepareStatement("SELECT `name`,`role`,`login` FROM `heroes` WHERE `name` = ? "); //Берем из базы ник и роль игрока
+			selectData.setString(1, request.getParameter("name"));
+			ResultSet rs = selectData.executeQuery();
+			rs.next();
+			
+			//пишем в сессионные переменные
+			session.setAttribute("name", rs.getString(1));
+			session.setAttribute("role", rs.getString(2));
+			
+			if ( session.getAttribute("login").toString().equals(rs.getString(3))) //проверяем чтобы логин сессии соответствовал логину выбранного персонажа
+			{
+				json.put( "result", "Вы выбрали " + session.getAttribute("name"));
+				out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+				con.close();
+			}
+			else
+			{
+				json.put( "result", "Ошибка, пожалуйста перейдите на страницу авторизации.");
+				out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
+				con.close();
+			}
+			
+			} catch (ClassNotFoundException | SQLException | JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
 		}
 		else
 		{

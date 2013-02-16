@@ -11,6 +11,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import org.apache.catalina.websocket.MessageInbound;
 import org.apache.catalina.websocket.StreamInbound;
@@ -74,22 +75,49 @@ public class WSserver extends WebSocketServlet
 	        		
 	        		try
 	        		{
-	        			StreamInbound tempory = allConnections.get(result[1]); //получаем соединение по логину
+	        			StreamInbound temporary = allConnections.get(result[1]); //получаем соединение по логину
 	        			
-	        			if ( tempory != null )
+	        			if ( temporary != null )
 	        			{
-	        				tempory.getWsOutbound().writeTextMessage(toPlayer); //отправляем сообщение если соединение найдено
+	        				temporary.getWsOutbound().writeTextMessage(toPlayer); //отправляем сообщение если соединение найдено
 	        			}
 	        			else
 	        			{
 	        				currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("This user is Offline."));
-	        				System.out.println("error, tempory is NULL");
+	        				System.out.println("error, temporary is NULL");
 	        			}
 	        			
 	        		}
 	        		catch( NullPointerException ex )
 	        		{ ex.printStackTrace(); }
 	        		
+	        	}
+	        	else if( result[0].equals("toMembersOfGame"))
+	        	{
+	        		CharBuffer toPlayers = CharBuffer.wrap(result[3]);
+	        		
+	        		try
+	        		{
+	        			StreamInbound temporary = allConnections.get(result[1]); //получаем соединение по логину
+	        			StreamInbound temporary2 = allConnections.get(result[2]); //получаем соединение по логину
+	        			
+	        			if ( temporary != null )
+	        			{
+	        				temporary.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
+	        			}
+	        			else if( temporary2 != null )
+	        			{
+	        				temporary2.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
+	        			}
+	        			else
+	        			{
+	        				currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("This user is Offline."));
+	        				System.out.println("error, temporary is NULL");
+	        			}
+	        			
+	        		}
+	        		catch( NullPointerException ex )
+	        		{ ex.printStackTrace(); }
 	        	}
 	        	else
 	        	{
