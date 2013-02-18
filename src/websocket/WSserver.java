@@ -25,6 +25,8 @@ public class WSserver extends WebSocketServlet
 	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>();
 	 	static HashMap<String, StreamInbound> allConnections = new HashMap<String, StreamInbound>(); //для поиска соединения по логину игрока
 	 	
+	 	
+	 	
 	    @Override
 	    protected StreamInbound createWebSocketInbound(String subProtocol, HttpServletRequest request) 
 	    {

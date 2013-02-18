@@ -46,6 +46,8 @@ public class MysqlLib extends HttpServlet {
 		
 		JSONObject json = new JSONObject();
 		
+		//Авторизация
+		
 		if ( request.getParameter("action").equals("auth") )
 		{	
 			try {
@@ -70,8 +72,8 @@ public class MysqlLib extends HttpServlet {
 					session.setAttribute("login", request.getParameter("login"));
 				} 
 			catch(SQLException | ClassNotFoundException | JSONException e){ e.printStackTrace(); }
-		}
-		else if( request.getParameter("action").equals("reg") )
+		}			
+		else if( request.getParameter("action").equals("reg") )  //регистрация
 		{
 			try {
 				
@@ -237,28 +239,27 @@ public class MysqlLib extends HttpServlet {
 	
 						//Назначаем ячейку таблицы согласно полученному Id персонажа
 		
-						if ( request.getParameter("role").equals("1") )
+						if ( session.getAttribute("role").equals("1") )
 						{
 							role = "knight";
 						}
-						else if( request.getParameter("role").equals("2") )
+						else if( session.getAttribute("role").equals("2") )
 						{
 							role = "mage";
 						}
-						else if( request.getParameter("role").equals("3") )
+						else if( session.getAttribute("role").equals("3") )
 						{
 							role = "archer";
 						}
 						
 						if( role != null )
 						{
-							session.setAttribute("role", request.getParameter("role")); //записываем в сессию роль игрока
 							
 							insertReg = con.prepareStatement("INSERT INTO `games` (`login`, `title`, `password`, "+ role +") VALUES ( ?, ?, ?, ? )");
 							insertReg.setString(1, session.getAttribute("login").toString());
 							insertReg.setString(2, request.getParameter("title"));
 							insertReg.setString(3, request.getParameter("password"));
-							insertReg.setInt(4, 1); //1 - значит такой игрок присоединен к игре, 0 значит нет ( по умолчанию )
+							insertReg.setString(4, session.getAttribute("login").toString());
 							
 							insertReg.execute();
 							con.close();
