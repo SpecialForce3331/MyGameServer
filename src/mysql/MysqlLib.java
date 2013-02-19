@@ -300,14 +300,14 @@ public class MysqlLib extends HttpServlet {
 					int count = countResult.getInt(1);//Значение будет только одной строкой, эту строку и выбираем
 					String[] games = new String[count]; //создаем массив численностью в кол-во строк что получили из базы
 					
-					selectData = con.prepareStatement("SELECT `login`,`title`,`knight`,`mage`,`archer` FROM `games` WHERE `login` = ?"); //получаем строки 
+					selectData = con.prepareStatement("SELECT `id`,`login`,`title`,`knight`,`mage`,`archer` FROM `games` WHERE `login` = ?"); //получаем строки 
 					selectData.setString(1, session.getAttribute("login").toString() );
 					ResultSet rs = selectData.executeQuery();
 					
 					for(int i = 0; i < count; i++) //кладем в массим в удобной форме, чтобы прочитать на клиентской стороне
 					{	
 						rs.next();
-						games[i] = rs.getString(1) + "," + rs.getString(2) + "," + rs.getString(3) + "," + rs.getString(4) + "," + rs.getString(5);						
+						games[i] = rs.getString(1) + "," + rs.getString(2) + "," + rs.getString(3) + "," + rs.getString(4) + "," + rs.getString(5) + "," + rs.getString(6);						
 					}
 					json.put( "result", games);
 					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );	
