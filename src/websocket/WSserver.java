@@ -42,11 +42,9 @@ public class WSserver extends WebSocketServlet
 		static String password = "MyGame";
 		//Mysql END
 	
-	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>();
+	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>(); //все соединения
 	 	static HashMap<String, StreamInbound> allConnections = new HashMap<String, StreamInbound>(); //для поиска соединения по логину игрока
-	 	
-	 	
-	 	
+	 	 	
 	    @Override
 	    protected StreamInbound createWebSocketInbound(String subProtocol, HttpServletRequest request) 
 	    {
@@ -90,59 +88,37 @@ public class WSserver extends WebSocketServlet
 						setUnicod1.execute();
 						setUnicod2.execute();
 			
-						selectData = con.prepareStatement("SELECT `knight`,`mage`,`archer` FROM `games` WHERE `id` = ?");
-						selectData.setString(1, result[1]);
+						selectData = con.prepareStatement("SELECT * FROM `heroes` WHERE `login` = ? AND `name` = ?"); //проверяем соответствует ли персонаж логину
+						selectData.setString(1, result[2]);
+						selectData.setString(2, result[3]);
 						ResultSet rs = selectData.executeQuery();
 						rs.next();
-						rs.getString(1);
-						
+						if ( rs.getRow() != 0 ) 
+						{					
+							selectData = con.prepareStatement("SELECT `knight`,`mage`,`archer` FROM `games` WHERE `id` = ?"); //проверяем есть ли доступ к этой игровой сессии
+							selectData.setString(1, result[1]);
+							rs = selectData.executeQuery();
+							rs.next();
+							if ( rs.getString(1).equals(result[2]) || rs.getString(2).equals(result[2]) || rs.getString(3).equals(result[2]) )
+							{
+								allConnections.put(result[2], currentConnect);
+								currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("Welcome " + result[2]));
+							}
+						}
 	        		} catch (SQLException | ClassNotFoundException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 	        	}
-	        	else if( result[0].equals("login") ) //регистрация логина и соединения в хэшмапе
-	        	{
-	        		try
-	        		{
-	        			allConnections.put(result[1], currentConnect); //записываем текущее соединение под индексом логина
-	        			currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("Server -- Connection Accept.")); //сообщаем что все хорошо
-	        		}
-	        		catch(  NullPointerException ex )
-	        		{ ex.printStackTrace(); }
-	        		
-	        	}
-	        	else if( result[0].equals("toPlayer") ) //отправка сообщения определенному соединению по логину
-	        	{
-	        		CharBuffer toPlayer = CharBuffer.wrap(result[2]);
-	        		
-	        		try
-	        		{
-	        			StreamInbound temporary = allConnections.get(result[1]); //получаем соединение по логину
-	        			
-	        			if ( temporary != null )
-	        			{
-	        				temporary.getWsOutbound().writeTextMessage(toPlayer); //отправляем сообщение если соединение найдено
-	        			}
-	        			else
-	        			{
-	        				currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("This user is Offline."));
-	        				System.out.println("error, temporary is NULL");
-	        			}
-	        			
-	        		}
-	        		catch( NullPointerException ex )
-	        		{ ex.printStackTrace(); }
-	        		
-	        	}
 	        	else if( result[0].equals("toMembersOfGame"))
 	        	{
-	        		CharBuffer toPlayers = CharBuffer.wrap(result[3]);
+	        		CharBuffer toPlayers = CharBuffer.wrap(result[4]);
 	        		
 	        		try
 	        		{
 	        			StreamInbound temporary = allConnections.get(result[1]); //получаем соединение по логину
 	        			StreamInbound temporary2 = allConnections.get(result[2]); //получаем соединение по логину
+	        			StreamInbound temporary3 = allConnections.get(result[3]); //получаем соединение по логину
 	        			
 	        			if ( temporary != null )
 	        			{
@@ -151,6 +127,10 @@ public class WSserver extends WebSocketServlet
 	        			else if( temporary2 != null )
 	        			{
 	        				temporary2.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
+	        			}
+	        			else if( temporary3 != null )
+	        			{
+	        				temporary3.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
 	        			}
 	        			else
 	        			{
@@ -167,8 +147,7 @@ public class WSserver extends WebSocketServlet
 	        		currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("Error, unknown query =)"));
 	        	}
 
-	        }
-	        
+	        }        
 	        private void broadcast( String messageAll ) {
 	            for (EchoMessageInbound connection : connections) {
 	                try {

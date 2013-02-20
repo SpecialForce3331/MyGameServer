@@ -293,15 +293,13 @@ public class MysqlLib extends HttpServlet {
 					setUnicod1.execute();
 					setUnicod2.execute();
 		
-					selectData = con.prepareStatement("SELECT COUNT(`login`) FROM `games` WHERE `login` = ?"); //получаем кол-во строк
-					selectData.setString(1, session.getAttribute("login").toString() );
+					selectData = con.prepareStatement("SELECT COUNT(`login`) FROM `games` WHERE `full` = 0"); //получаем кол-во строк
 					ResultSet countResult = selectData.executeQuery();
 					countResult.next();
 					int count = countResult.getInt(1);//Значение будет только одной строкой, эту строку и выбираем
 					String[] games = new String[count]; //создаем массив численностью в кол-во строк что получили из базы
 					
-					selectData = con.prepareStatement("SELECT `id`,`login`,`title`,`knight`,`mage`,`archer` FROM `games` WHERE `login` = ?"); //получаем строки 
-					selectData.setString(1, session.getAttribute("login").toString() );
+					selectData = con.prepareStatement("SELECT `id`,`login`,`title`,`knight`,`mage`,`archer` FROM `games` WHERE `full` = 0"); //получаем строки 
 					ResultSet rs = selectData.executeQuery();
 					
 					for(int i = 0; i < count; i++) //кладем в массим в удобной форме, чтобы прочитать на клиентской стороне
