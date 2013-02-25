@@ -25,8 +25,6 @@ import org.apache.catalina.websocket.WebSocketServlet;
 import org.apache.catalina.websocket.WsOutbound;
 
 
-
-
 public class WSserver extends WebSocketServlet
 {		
 		//Mysql
@@ -43,8 +41,13 @@ public class WSserver extends WebSocketServlet
 		//Mysql END
 	
 	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>(); //все соединения
-	 	static HashMap<String, StreamInbound> allConnections = new HashMap<String, StreamInbound>(); //для поиска соединения по логину игрока
-	 	 	
+	 	static HashMap<String, StreamInbound> allConnections = new HashMap<String, StreamInbound>(); //для поиска соединения по логину игрока	
+	 	
+	 	static String player1; //3 переменных в которые положим логины игроков
+		static String player2;
+		static String player3;
+		static String currentPlayer;
+	 	
 	    @Override
 	    protected StreamInbound createWebSocketInbound(String subProtocol, HttpServletRequest request) 
 	    {
@@ -66,6 +69,7 @@ public class WSserver extends WebSocketServlet
 	        @Override
 	        protected void onClose(int status) {
 	        	connections.remove(this);
+	        	allConnections.remove(currentPlayer);
 	         }
 	        @Override
 	        protected void onBinaryMessage(ByteBuffer message) throws IOException {
@@ -79,7 +83,8 @@ public class WSserver extends WebSocketServlet
 	        	String[] result = message.toString().split(",");
 	        	
 	        	if ( result[0].equals("id")) //при соединении с игрой проверка на наличии логина в игровой сессии по ее id
-	        	{
+	        	{	        	
+	        		
 	        		try {
 		        		Class.forName("com.mysql.jdbc.Driver");
 						con = DriverManager.getConnection(url, user, password);
@@ -103,6 +108,13 @@ public class WSserver extends WebSocketServlet
 							{
 								allConnections.put(result[2], currentConnect);
 								currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("Welcome " + result[2]));
+								
+								//пишем логины игроков данной сессии в переменные
+								currentPlayer = result[2];
+								player1 = rs.getString(1);
+								player2 = rs.getString(2);
+								player3 = rs.getString(3);
+								
 							}
 						}
 	        		} catch (SQLException | ClassNotFoundException e) {
@@ -112,30 +124,28 @@ public class WSserver extends WebSocketServlet
 	        	}
 	        	else if( result[0].equals("toMembersOfGame"))
 	        	{
-	        		CharBuffer toPlayers = CharBuffer.wrap(result[4]);
 	        		
 	        		try
 	        		{
-	        			StreamInbound temporary = allConnections.get(result[1]); //получаем соединение по логину
-	        			StreamInbound temporary2 = allConnections.get(result[2]); //получаем соединение по логину
-	        			StreamInbound temporary3 = allConnections.get(result[3]); //получаем соединение по логину
+	        			StreamInbound temporary1 = allConnections.get(player1); //получаем соединение по логину
+	        			StreamInbound temporary2 = allConnections.get(player2); //получаем соединение по логину
+	        			StreamInbound temporary3 = allConnections.get(player3); //получаем соединение по логину
 	        			
-	        			if ( temporary != null )
+	        			
+	        			if ( temporary1 != null )
 	        			{
-	        				temporary.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
+	        				CharBuffer toPlayers = CharBuffer.wrap(result[1]);
+	        				temporary1.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
 	        			}
-	        			else if( temporary2 != null )
+	        			if( temporary2 != null )
 	        			{
+	        				CharBuffer toPlayers = CharBuffer.wrap(result[1]);
 	        				temporary2.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
 	        			}
-	        			else if( temporary3 != null )
+	        			if( temporary3 != null )
 	        			{
+	        				CharBuffer toPlayers = CharBuffer.wrap(result[1]);
 	        				temporary3.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
-	        			}
-	        			else
-	        			{
-	        				currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("This user is Offline."));
-	        				System.out.println("error, temporary is NULL");
 	        			}
 	        			
 	        		}

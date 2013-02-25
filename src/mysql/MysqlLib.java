@@ -352,9 +352,113 @@ public class MysqlLib extends HttpServlet {
 			} catch (ClassNotFoundException | SQLException | JSONException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			}			
+		}
+		else if( request.getParameter("action").equals("join") )
+		{
+			HttpSession session = request.getSession(true);
+			
+			String role = null;
+			
+			//Назначаем ячейку таблицы согласно полученному Id персонажа
+
+			if ( session.getAttribute("role").equals("1") )
+			{
+				role = "knight";
+			}
+			else if( session.getAttribute("role").equals("2") )
+			{
+				role = "mage";
+			}
+			else if( session.getAttribute("role").equals("3") )
+			{
+				role = "archer";
 			}
 			
+			if( role != null )
+			{
+				try {
+					Class.forName("com.mysql.jdbc.Driver");
+					con = DriverManager.getConnection(url, user, password);
+					setUnicod1 = con.prepareStatement("set character set utf8");
+					setUnicod2 = con.prepareStatement("set names utf8");
+					setUnicod1.execute();
+					setUnicod2.execute();
+					
+					selectData = con.prepareStatement("SELECT " + role + " FROM `games` WHERE `id` = ?"); //Берем из базы ник и роль игрока
+					selectData.setString(1, request.getParameter("id"));
+					
+					ResultSet rs = selectData.executeQuery();
+					rs.next();
+					if ( rs.getString(1).isEmpty() )
+					{
+						updateData = con.prepareStatement("UPDATE `games` SET `"+ role + "` = ? WHERE `id` = ?");
+						updateData.setString(1, session.getAttribute("login").toString());
+						updateData.setString(2, request.getParameter("id"));
+						
+						updateData.executeUpdate();
+						con.close();
+						
+						json.put("result", "ok");
+						out.print( request.getParameter("callback") + "(" + json.toString() + ")" );
+					}
+					else
+					{
+						json.put("result", "false");
+						out.print( request.getParameter("callback") + "(" + json.toString() + ")" );
+					}
+					
+				} catch (ClassNotFoundException | SQLException | JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		else if ( request.getParameter("action").equals("disconnect"))
+		{
+			HttpSession session = request.getSession(true);
 			
+			String role = null;
+			
+			//Назначаем ячейку таблицы согласно полученному Id персонажа
+
+			if ( session.getAttribute("role").equals("1") )
+			{
+				role = "knight";
+			}
+			else if( session.getAttribute("role").equals("2") )
+			{
+				role = "mage";
+			}
+			else if( session.getAttribute("role").equals("3") )
+			{
+				role = "archer";
+			}
+			
+			if( role != null )
+			{
+				try {
+					
+					Class.forName("com.mysql.jdbc.Driver");
+					con = DriverManager.getConnection(url, user, password);
+					setUnicod1 = con.prepareStatement("set character set utf8");
+					setUnicod2 = con.prepareStatement("set names utf8");
+					setUnicod1.execute();
+					setUnicod2.execute();
+					updateData = con.prepareStatement("UPDATE `games` SET "+ role + " = '' WHERE `id` = ?");
+					updateData.setString(1, request.getParameter("id"));
+					
+					updateData.executeUpdate();
+					con.close();
+					
+					json.put("result", "ok");
+					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );
+					
+				} catch (ClassNotFoundException | SQLException | JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 		}
 		else
 		{
