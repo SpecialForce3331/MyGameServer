@@ -460,6 +460,21 @@ public class MysqlLib extends HttpServlet {
 				}
 			}
 		}
+		else if ( request.getParameter("action").equals("getUserData") )
+		{
+					
+			try {
+				
+				HttpSession session = request.getSession(true);
+				json.put("result", session.getAttribute("role"));
+				out.print( request.getParameter("callback") + "(" + json.toString() + ")" );
+				
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
 		else
 		{
 			

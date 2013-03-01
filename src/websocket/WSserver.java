@@ -124,6 +124,10 @@ public class WSserver extends WebSocketServlet
 	        	}
 	        	else if( result[0].equals("toMembersOfGame"))
 	        	{
+	        		for ( int i = 2; i < result.length; i++ ) //цикл для перебора всех сообщений и записи с запятими в переменную для отправки клиенту
+	        		{
+	        			result[1] = result[1] + "," + result[i];	
+	        		}
 	        		
 	        		try
 	        		{
