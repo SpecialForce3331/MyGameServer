@@ -88,16 +88,21 @@ public class MysqlLib extends HttpServlet {
 				selectData.setString(1, request.getParameter("login"));
 				ResultSet rs = selectData.executeQuery();
 				rs.next();
+
 				if ( rs.getRow() == 0 ) //если такого логина в базе не найдено - регистрируем
 				{
 					insertReg = con.prepareStatement("INSERT INTO `users` (`login`, `password`) VALUES ( ?, ? )");
 					insertReg.setString(1, request.getParameter("login"));
 					insertReg.setString(2, request.getParameter("password"));
-
+					insertReg.execute();
+					
 					con.close();
 					
 					HttpSession session = request.getSession(true);
 					session.setAttribute("login", request.getParameter("login"));
+					
+					json.put("result", "ok");
+					out.print( request.getParameter("callback") + "(" + json.toString() + ")" );
 				}
 				else
 				{
