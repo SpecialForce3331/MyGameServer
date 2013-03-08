@@ -41,4 +41,9 @@ public class Characters {
 		double result = intellect * 2 + damage + agility * 0.5;
 		return result;
 	}
+	double rangeAttack()
+	{
+		double result = agility * 2 + damage;
+		return result;
+	}
 }
