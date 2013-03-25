@@ -2,21 +2,21 @@ package logic;
 
 public class Characters {
 
-	int level;
-	int exp;
-	int resist;
-	int health;
-	int intellect;
-	int strength;
-	int agility;
-	int damage;
-	int armor;
-	int critChance;
-	int critStrike;
-	int x;
-	int y;
+	public int level;
+	public int exp;
+	public int resist;
+	public int health;
+	public int intellect;
+	public int strength;
+	public int agility;
+	public int damage;
+	public int armor;
+	public int critChance;
+	public int critStrike;
+	public int x = 10;
+	public int y = 240;
 	
-	void move( String direction )
+	public void move( String direction )
 	{
 		if ( direction.equals("forward") )
 		{
@@ -31,17 +31,17 @@ public class Characters {
 			y -= 80;
 		}
 	}
-	double meleeAttack()
+	public double meleeAttack()
 	{
 		double result = strength * 2 + damage + agility * 0.5;
 		return result;
 	}
-	double mageAttack()
+	public double mageAttack()
 	{
 		double result = intellect * 2 + damage + agility * 0.5;
 		return result;
 	}
-	double rangeAttack()
+	public double rangeAttack()
 	{
 		double result = agility * 2 + damage;
 		return result;

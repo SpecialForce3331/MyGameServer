@@ -24,6 +24,7 @@ import org.apache.catalina.websocket.StreamInbound;
 import org.apache.catalina.websocket.WebSocketServlet;
 import org.apache.catalina.websocket.WsOutbound;
 
+import logic.Characters;
 
 public class WSserver extends WebSocketServlet
 {		
@@ -38,23 +39,24 @@ public class WSserver extends WebSocketServlet
 		static String url = "jdbc:mysql://127.0.0.1:3306/MyGame?useUnicode=true&amp;characterEncoding=utf-8";
 		static String user = "MyGame";
 		static String password = "MyGame";
-		//Mysql END
+		
 	
 	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>(); //все соединения
 	 	static HashMap<String, StreamInbound> allConnections = new HashMap<String, StreamInbound>(); //для поиска соединения по логину игрока	
 	 	
-	 	static String player1; //3 переменных в которые положим логины игроков
-		static String player2;
-		static String player3;
-		static String currentPlayer;
-	 	
+	 	 String player1; //4 переменных в которые положим логины игроков
+		 String player2;
+		 String player3;
+		 String currentPlayer;
+		 
+		
 	    @Override
 	    protected StreamInbound createWebSocketInbound(String subProtocol, HttpServletRequest request) 
 	    {
 	        return new EchoMessageInbound();
 	    }
 
-	    private static final class EchoMessageInbound extends MessageInbound 
+	    private final class EchoMessageInbound extends MessageInbound 
 	    {
 	    	 
 	    	StreamInbound currentConnect; //Для запоминания текущего соединения
@@ -79,6 +81,10 @@ public class WSserver extends WebSocketServlet
 
 	        @Override
 	        protected void onTextMessage(CharBuffer message) throws IOException {
+	        	
+
+        		Characters myChar = new Characters();
+
 	        	
 	        	String[] result = message.toString().split(",");
 	        	
@@ -114,7 +120,7 @@ public class WSserver extends WebSocketServlet
 								player1 = rs.getString(1);
 								player2 = rs.getString(2);
 								player3 = rs.getString(3);
-								
+											
 							}
 						}
 	        		} catch (SQLException | ClassNotFoundException e) {
@@ -124,46 +130,60 @@ public class WSserver extends WebSocketServlet
 	        	}
 	        	else if( result[0].equals("toMembersOfGame"))
 	        	{
-	        		for ( int i = 2; i < result.length; i++ ) //цикл для перебора всех сообщений и записи с запятими в переменную для отправки клиенту
+	        		for ( int i = 2; i < result.length; i++ ) //цикл для перебора всех сообщений и последующей записью в переменную с запятими для отправки клиенту
 	        		{
 	        			result[1] = result[1] + "," + result[i];	
 	        		}
+	        		toPlayers(result[1]);	        			
+	        	}
+	        	else if( result[0].equals("move")) //при получении сообщения о передвижении - считаем траекторию
+	        	{
+	        		myChar.move(result[1]);
 	        		
-	        		try
-	        		{
-	        			StreamInbound temporary1 = allConnections.get(player1); //получаем соединение по логину
-	        			StreamInbound temporary2 = allConnections.get(player2); //получаем соединение по логину
-	        			StreamInbound temporary3 = allConnections.get(player3); //получаем соединение по логину
-	        			
-	        			
-	        			if ( temporary1 != null )
-	        			{
-	        				CharBuffer toPlayers = CharBuffer.wrap(result[1]);
-	        				temporary1.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
-	        			}
-	        			if( temporary2 != null )
-	        			{
-	        				CharBuffer toPlayers = CharBuffer.wrap(result[1]);
-	        				temporary2.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
-	        			}
-	        			if( temporary3 != null )
-	        			{
-	        				CharBuffer toPlayers = CharBuffer.wrap(result[1]);
-	        				temporary3.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
-	        			}
-	        			
-	        		}
-	        		catch( NullPointerException ex )
-	        		{ ex.printStackTrace(); }
+	        		toPlayers(currentPlayer + "," + Integer.toString(myChar.x) + "," + Integer.toString(myChar.y));	        		
 	        	}
 	        	else
 	        	{
 	        		currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("Error, unknown query =)"));
 	        	}
 
-	        }        
-	        private void broadcast( String messageAll ) {
-	            for (EchoMessageInbound connection : connections) {
+	        }
+	        
+	        public void toPlayers(String message) //функция отправки сообщения игрокам текущей сессии
+	        {
+	        	try
+        		{
+        			StreamInbound temporary1 = allConnections.get(player1); //получаем соединение по логину
+        			StreamInbound temporary2 = allConnections.get(player2); //получаем соединение по логину
+        			StreamInbound temporary3 = allConnections.get(player3); //получаем соединение по логину
+        			
+        			//если соединение по логину было найдено...
+        			
+        			if ( temporary1 != null )
+        			{
+        				CharBuffer toPlayers = CharBuffer.wrap(message);
+        				temporary1.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
+        			}
+        			if( temporary2 != null )
+        			{
+        				CharBuffer toPlayers = CharBuffer.wrap(message);
+        				temporary2.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
+        			}
+        			if( temporary3 != null )
+        			{
+        				CharBuffer toPlayers = CharBuffer.wrap(message);
+        				temporary3.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
+        			}
+        			
+        		}
+        		catch( NullPointerException | IOException ex )
+        		{ ex.printStackTrace(); }
+	        }
+
+	        private void broadcast( String messageAll ) //функция отправки сообщения каждому игроку что подключен к серверу, кроме себя
+	        {
+	            for (EchoMessageInbound connection : connections) 
+	            {
 	                try {
 	                    CharBuffer buffer = CharBuffer.wrap(messageAll);
 	                    
