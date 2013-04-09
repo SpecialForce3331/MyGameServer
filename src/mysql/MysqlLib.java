@@ -469,12 +469,33 @@ public class MysqlLib extends HttpServlet {
 		{
 					
 			try {
-				
 				HttpSession session = request.getSession(true);
-				json.put("result", session.getAttribute("role"));
+				
+				Class.forName("com.mysql.jdbc.Driver");
+				con = DriverManager.getConnection(url, user, password);
+				setUnicod1 = con.prepareStatement("set character set utf8");
+				setUnicod2 = con.prepareStatement("set names utf8");
+				setUnicod1.execute();
+				setUnicod2.execute();
+				
+				selectData = con.prepareStatement("SELECT `role`,`login`,`name`,`lvl`,`exp` FROM `heroes` WHERE `login` = ? AND `name` = ? "); //Проверяем наличие уже созданной игры по логину
+				selectData.setString(1, session.getAttribute("login").toString());
+				selectData.setString(2, session.getAttribute("name").toString());
+				ResultSet rs = selectData.executeQuery();
+				rs.next();
+				
+				//Загоняем данные в массив
+				String[] resultArray = new String[5];
+				
+				for( int i = 0; i < 5; i++)
+				{
+					resultArray[i] = rs.getString(i+1);
+				}
+				
+				json.put("result", resultArray);
 				out.print( request.getParameter("callback") + "(" + json.toString() + ")" );
 				
-			} catch (JSONException e) {
+			} catch (JSONException | ClassNotFoundException | SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

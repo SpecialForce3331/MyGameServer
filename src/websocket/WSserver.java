@@ -139,8 +139,8 @@ public class WSserver extends WebSocketServlet
 	        	else if( result[0].equals("move")) //при получении сообщения о передвижении - считаем траекторию
 	        	{
 	        		myChar.move(result[1]);
-	        		
-	        		toPlayers(currentPlayer + "," + Integer.toString(myChar.x) + "," + Integer.toString(myChar.y));	        		
+	        		result[1] = currentPlayer + "," + Integer.toString(myChar.x) + "," + Integer.toString(myChar.y);
+	        		toPlayers(result[1]);
 	        	}
 	        	else
 	        	{
@@ -156,23 +156,25 @@ public class WSserver extends WebSocketServlet
         			StreamInbound temporary1 = allConnections.get(player1); //получаем соединение по логину
         			StreamInbound temporary2 = allConnections.get(player2); //получаем соединение по логину
         			StreamInbound temporary3 = allConnections.get(player3); //получаем соединение по логину
-        			
+        			 
         			//если соединение по логину было найдено...
         			
         			if ( temporary1 != null )
         			{
-        				CharBuffer toPlayers = CharBuffer.wrap(message);
-        				temporary1.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
+        				CharBuffer msgToPlayers = CharBuffer.wrap(message);
+        				temporary1.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено
         			}
         			if( temporary2 != null )
         			{
-        				CharBuffer toPlayers = CharBuffer.wrap(message);
-        				temporary2.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
+        				CharBuffer msgToPlayers = CharBuffer.wrap(message);
+        				temporary2.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено
+        				System.out.println("2");
         			}
         			if( temporary3 != null )
         			{
-        				CharBuffer toPlayers = CharBuffer.wrap(message);
-        				temporary3.getWsOutbound().writeTextMessage(toPlayers); //отправляем сообщение если соединение найдено
+        				CharBuffer msgToPlayers = CharBuffer.wrap(message);
+        				temporary3.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено
+        				System.out.println("3");
         			}
         			
         		}
@@ -185,13 +187,9 @@ public class WSserver extends WebSocketServlet
 	            for (EchoMessageInbound connection : connections) 
 	            {
 	                try {
-	                    CharBuffer buffer = CharBuffer.wrap(messageAll);
-	                    
-	                    if(connection != currentConnect ) //отсылаем всем кроме самого себя
-	                    {
+		                    CharBuffer buffer = CharBuffer.wrap(messageAll);	                    
 	                    	connection.getWsOutbound().writeTextMessage(buffer);
-	                    }
-	                    
+   
 	                } catch (IOException ex) {
 	                    
 	                }
