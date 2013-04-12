@@ -44,10 +44,7 @@ public class WSserver extends WebSocketServlet
 	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>(); //все соединения
 	 	static HashMap<String, StreamInbound> allConnections = new HashMap<String, StreamInbound>(); //для поиска соединения по логину игрока	
 	 	
-	 	 String player1; //4 переменных в которые положим логины игроков
-		 String player2;
-		 String player3;
-		 String currentPlayer;
+	 	 
 		 
 		
 	    @Override
@@ -60,18 +57,25 @@ public class WSserver extends WebSocketServlet
 	    {
 	    	 
 	    	StreamInbound currentConnect; //Для запоминания текущего соединения
-	    	
+	    	Characters myChar;
+	    	String player1; //4 переменных в которые положим логины игроков
+			String player2;
+			String player3;
+			String currentPlayer;
 	    	
 	    	@Override
 	        protected void onOpen(WsOutbound outbound) {
 	            connections.add(this);
 	            currentConnect = this;
+	            myChar = new Characters();
 	        }
 
 	        @Override
 	        protected void onClose(int status) {
 	        	connections.remove(this);
 	        	allConnections.remove(currentPlayer);
+	        	myChar.x = 10;
+	        	myChar.y = 240;
 	         }
 	        @Override
 	        protected void onBinaryMessage(ByteBuffer message) throws IOException {
@@ -82,8 +86,6 @@ public class WSserver extends WebSocketServlet
 	        @Override
 	        protected void onTextMessage(CharBuffer message) throws IOException {
 	        	
-
-        		Characters myChar = new Characters();
 
 	        	
 	        	String[] result = message.toString().split(",");
@@ -113,13 +115,14 @@ public class WSserver extends WebSocketServlet
 							if ( rs.getString(1).equals(result[2]) || rs.getString(2).equals(result[2]) || rs.getString(3).equals(result[2]) )
 							{
 								allConnections.put(result[2], currentConnect);
-								currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("Welcome " + result[2]));
-								
+									
 								//пишем логины игроков данной сессии в переменные
 								currentPlayer = result[2];
 								player1 = rs.getString(1);
 								player2 = rs.getString(2);
 								player3 = rs.getString(3);
+								
+								toPlayers("new" + "," + result[2]);
 											
 							}
 						}
@@ -139,8 +142,7 @@ public class WSserver extends WebSocketServlet
 	        	else if( result[0].equals("move")) //при получении сообщения о передвижении - считаем траекторию
 	        	{
 	        		myChar.move(result[1]);
-	        		result[1] = currentPlayer + "," + Integer.toString(myChar.x) + "," + Integer.toString(myChar.y);
-	        		toPlayers(result[1]);
+	        		toPlayers(currentPlayer + "," + Integer.toString(myChar.x) + "," + Integer.toString(myChar.y));
 	        	}
 	        	else
 	        	{
@@ -167,14 +169,12 @@ public class WSserver extends WebSocketServlet
         			if( temporary2 != null )
         			{
         				CharBuffer msgToPlayers = CharBuffer.wrap(message);
-        				temporary2.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено
-        				System.out.println("2");
+        				temporary2.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено       				
         			}
         			if( temporary3 != null )
         			{
         				CharBuffer msgToPlayers = CharBuffer.wrap(message);
-        				temporary3.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено
-        				System.out.println("3");
+        				temporary3.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено	
         			}
         			
         		}

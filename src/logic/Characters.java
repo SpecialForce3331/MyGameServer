@@ -28,7 +28,7 @@ public class Characters {
 		}
 		else if(direction.equals("jump"))
 		{
-			y -= 80;
+			
 		}
 	}
 	public double meleeAttack()
