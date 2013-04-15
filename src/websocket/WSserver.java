@@ -43,9 +43,7 @@ public class WSserver extends WebSocketServlet
 	
 	 	private final static Set<EchoMessageInbound> connections = new CopyOnWriteArraySet<EchoMessageInbound>(); //все соединения
 	 	static HashMap<String, StreamInbound> allConnections = new HashMap<String, StreamInbound>(); //для поиска соединения по логину игрока	
-	 	
 	 	 
-		 
 		
 	    @Override
 	    protected StreamInbound createWebSocketInbound(String subProtocol, HttpServletRequest request) 
@@ -62,6 +60,7 @@ public class WSserver extends WebSocketServlet
 			String player2;
 			String player3;
 			String currentPlayer;
+			String gameId; //переменная для хранения id игровой сессии, для обновления списка игроков в сессии
 	    	
 	    	@Override
 	        protected void onOpen(WsOutbound outbound) {
@@ -85,9 +84,7 @@ public class WSserver extends WebSocketServlet
 
 	        @Override
 	        protected void onTextMessage(CharBuffer message) throws IOException {
-	        	
-
-	        	
+	        	   	
 	        	String[] result = message.toString().split(",");
 	        	
 	        	if ( result[0].equals("id")) //при соединении с игрой проверка на наличии логина в игровой сессии по ее id
@@ -123,7 +120,8 @@ public class WSserver extends WebSocketServlet
 								player3 = rs.getString(3);
 								
 								toPlayers("new" + "," + result[2]);
-											
+								
+								gameId = result[1];	//записываем ID игровой сессии для обновления списка игроков в дальнейшем	
 							}
 						}
 	        		} catch (SQLException | ClassNotFoundException e) {
@@ -144,11 +142,44 @@ public class WSserver extends WebSocketServlet
 	        		myChar.move(result[1]);
 	        		toPlayers(currentPlayer + "," + Integer.toString(myChar.x) + "," + Integer.toString(myChar.y));
 	        	}
+	        	else if( result[0].equals("refreshPlayers"))
+	        	{
+	        		refreshPlayers();
+	        	}
 	        	else
 	        	{
 	        		currentConnect.getWsOutbound().writeTextMessage(CharBuffer.wrap("Error, unknown query =)"));
 	        	}
 
+	        }
+	        public void refreshPlayers() //функция обновления игроков в сесии
+	        {
+	        	try {
+	        		Class.forName("com.mysql.jdbc.Driver");
+					con = DriverManager.getConnection(url, user, password);
+					setUnicod1 = con.prepareStatement("set character set utf8");
+					setUnicod2 = con.prepareStatement("set names utf8");
+					setUnicod1.execute();
+					setUnicod2.execute();
+	        		
+		        	ResultSet rs = selectData.executeQuery();
+		        	
+		        	selectData = con.prepareStatement("SELECT `knight`,`mage`,`archer` FROM `games` WHERE `id` = ?"); //проверяем есть ли доступ к этой игровой сессии
+					selectData.setString(1, gameId);
+					
+					rs = selectData.executeQuery();
+					rs.next();
+			
+					//пишем логины игроков данной сессии в переменные
+					player1 = rs.getString(1);
+					player2 = rs.getString(2);
+					player3 = rs.getString(3);
+				
+	        	} catch (SQLException | ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+	        	
 	        }
 	        
 	        public void toPlayers(String message) //функция отправки сообщения игрокам текущей сессии
@@ -165,16 +196,19 @@ public class WSserver extends WebSocketServlet
         			{
         				CharBuffer msgToPlayers = CharBuffer.wrap(message);
         				temporary1.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено
+        				
         			}
         			if( temporary2 != null )
         			{
         				CharBuffer msgToPlayers = CharBuffer.wrap(message);
-        				temporary2.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено       				
+        				temporary2.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено    
+        				
         			}
         			if( temporary3 != null )
         			{
         				CharBuffer msgToPlayers = CharBuffer.wrap(message);
         				temporary3.getWsOutbound().writeTextMessage(msgToPlayers); //отправляем сообщение если соединение найдено	
+        				
         			}
         			
         		}

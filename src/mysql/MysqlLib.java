@@ -143,7 +143,6 @@ public class MysqlLib extends HttpServlet {
 			if ( session.getAttribute("login") != null )
 			{
 				try { 
-					System.out.println(session.getAttribute("login").toString());
 					
 					Class.forName("com.mysql.jdbc.Driver");
 					con = DriverManager.getConnection(url, user, password);
