@@ -2,6 +2,7 @@ package logic;
 
 public class Characters {
 
+	public int velocity = 10; //скорость передвижения
 	public int level;
 	public int exp;
 	public int resist;
@@ -20,11 +21,11 @@ public class Characters {
 	{
 		if ( direction.equals("forward") )
 		{
-			x += 2;
+			x += velocity;
 		}
 		else if( direction.equals("back"))
 		{
-			x -= 2;
+			x -= velocity;
 		}
 		else if(direction.equals("jump"))
 		{
