@@ -212,7 +212,7 @@ public class WSserver extends WebSocketServlet
         			}
         			
         		}
-        		catch( NullPointerException | IOException ex )
+        		catch( Exception ex )
         		{ ex.printStackTrace(); }
 	        }
 
